@@ -260,7 +260,7 @@ function displayTime() {
         textSize(20 * scaleFactor);
         text('High Score: ' + highScore, width / 2, height / 2 + 40 * scaleFactor); // ハイスコアを表示
         textSize(16 * scaleFactor);
-        text('タップまたはクリックで再開', width / 2, height / 2 + 80 * scaleFactor); // 再開メッセージを表示
+        text('Tap or click to restart', width / 2, height / 2 + 80 * scaleFactor); // 再開メッセージを表示
         noLoop(); // draw()ループを停止
     } 
     fill(0); // 黒色で塗りつぶす
