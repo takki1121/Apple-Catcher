@@ -24,6 +24,11 @@ let flashRed = false; // 背景フラグ
 let flashTimer = 0;   // フラッシュ用タイマー
 let highScore = 0; // ハイスコア用変数を追加
 
+// スマホ対応のための変数
+let canvasWidth;
+let canvasHeight;
+let scaleFactor; // スケール係数
+
 // 画像とフォントを事前にロードする関数
 function preload() {
     appleImg = loadImage('Apple.png'); // Apple.pngをロード
@@ -34,13 +39,46 @@ function preload() {
 
 // ゲームの初期設定
 function setup() {
-    // 400x400ピクセルのキャンバスを作成
-    createCanvas(400, 400);
+    // スマホ対応の動的キャンバスサイズを計算
+    calculateCanvasSize();
+    
+    // 計算されたサイズでキャンバスを作成
+    createCanvas(canvasWidth, canvasHeight);
+    
+    // スケール係数を計算（基準サイズ400pxに対する比率）
+    scaleFactor = min(canvasWidth / 400, canvasHeight / 400);
+    
     // リンゴの位置を初期化
     resetApple();
-    basketWidth = 60; // かごの幅を設定
+    basketWidth = 60 * scaleFactor; // かごの幅をスケールに合わせて設定
     basketX = width / 2 - basketWidth / 2; // かごの初期位置を画面中央に設定
     resetTimer();
+}
+
+// スマホ対応のキャンバスサイズを計算する関数
+function calculateCanvasSize() {
+    let maxWidth = windowWidth - 20; // 余白を考慮
+    let maxHeight = windowHeight - 20; // 余白を考慮
+    
+    // 最小サイズと最大サイズを設定
+    let minSize = 300;
+    let maxSize = 600;
+    
+    // 縦長のスマホ画面に最適化
+    if (windowWidth < windowHeight) {
+        // 縦向きの場合
+        canvasWidth = constrain(maxWidth, minSize, maxSize);
+        canvasHeight = constrain(maxHeight * 0.8, minSize, maxSize * 1.2);
+    } else {
+        // 横向きの場合
+        canvasWidth = constrain(maxWidth * 0.8, minSize, maxSize);
+        canvasHeight = constrain(maxHeight, minSize, maxSize);
+    }
+    
+    // アスペクト比を調整（縦長を維持）
+    if (canvasWidth > canvasHeight) {
+        canvasWidth = canvasHeight * 0.8;
+    }
 }
 
 // ゲームのメインループ
@@ -71,9 +109,9 @@ function draw() {
     
     // スコアを表示
     fill(0); // 黒色で塗りつぶす    
-    textSize(16); // テキストサイズを16に設定
+    textSize(16 * scaleFactor); // テキストサイズをスケールに合わせて設定
     textFont('Delius'); // Deliusフォントを適用
-    text('Score: ' + score, 10, 20); // スコアを画面の左上に表示
+    text('Score: ' + score, 10 * scaleFactor, 20 * scaleFactor); // スコアを画面の左上に表示
 
     displayTimer();
     updateTimer();
@@ -88,8 +126,9 @@ function displayApple() {
     let sx = frameIndex * frameWidth; // スプライトシート上のX座標
     let sy = 0; // スプライトシート上のY座標（1行目のみ使用）
 
-    // リンゴを2倍の大きさで描画
-    image(appleImg, appleX - 30, appleY - 30, 60, 60, sx, sy, frameWidth, frameHeight);
+    // リンゴをスケールファクターに応じたサイズで描画
+    let appleSize = 60 * scaleFactor;
+    image(appleImg, appleX - appleSize/2, appleY - appleSize/2, appleSize, appleSize, sx, sy, frameWidth, frameHeight);
 }
 
 // リンゴの位置を更新する関数
@@ -114,18 +153,21 @@ function updateApple() {
 
 // リンゴの位置をリセットする関数
 function resetApple() {
-    // リンゴのX座標をランダムに設定
-    appleX = random(30, width - 30);
+    // リンゴのX座標をランダムに設定（スケールに対応）
+    let margin = 30 * scaleFactor;
+    appleX = random(margin, width - margin);
     // リンゴのY座標を0に設定
-    appleY = 15;
-    // リンゴの落下速度をランダムに設定
-    appleSpeed = random(2, 5);
+    appleY = 15 * scaleFactor;
+    // リンゴの落下速度をランダムに設定（スケールに対応）
+    appleSpeed = random(2, 5) * scaleFactor;
 }
 
 // リンゴがかごに当たったかを判定する関数
 function isCaught() {
+    // かごの位置をスケールに対応
+    let basketBottom = height - 70 * scaleFactor;
     // リンゴのX座標がかごの範囲内にあり、かつリンゴのY座標がかごの上端より下にあるかをチェック
-    return (appleX > basketX - basketWidth / 2 && appleX < basketX + basketWidth && appleY >= height - 70);
+    return (appleX > basketX - basketWidth / 2 && appleX < basketX + basketWidth && appleY >= basketBottom);
 }
 
 // かごを表示する関数
@@ -136,13 +178,22 @@ function displayBasket() {
     // スプライトシートから現在のフレームを切り出して描画
     let sx = basketFrameIndex * basketFrameWidth; // スプライトシート上のX座標
     let sy = 0; // スプライトシート上のY座標（1行目のみ使用）
-    image(basketImg, basketX, height - 70, basketWidth, 40, sx, sy, basketFrameWidth, basketFrameHeight);
+    let basketHeight = 40 * scaleFactor;
+    let basketY = height - 70 * scaleFactor;
+    image(basketImg, basketX, basketY, basketWidth, basketHeight, sx, sy, basketFrameWidth, basketFrameHeight);
 }
 
-// かごをマウスに追従させる関数
+// かごをマウス・タッチに追従させる関数
 function moveBasket() {
-    // マウスのX座標に基づいてかごの位置を更新
-    basketX = mouseX - basketWidth / 2;
+    // マウスまたはタッチのX座標に基づいてかごの位置を更新
+    let targetX = mouseX;
+    
+    // タッチイベントがある場合はタッチ位置を使用
+    if (touches.length > 0) {
+        targetX = touches[0].x;
+    }
+    
+    basketX = targetX - basketWidth / 2;
 
     // かごが画面の左端を超えないように制限
     if (basketX < 0) {
@@ -152,6 +203,40 @@ function moveBasket() {
     if (basketX > width - basketWidth) {
         basketX = width - basketWidth;
     }
+}
+
+// タッチ開始時の処理（デフォルトイベントを防ぐ）
+function touchStarted() {
+    return false; // デフォルトのタッチイベントを防ぐ
+}
+
+// タッチ移動時の処理（デフォルトイベントを防ぐ）
+function touchMoved() {
+    return false; // デフォルトのタッチイベントを防ぐ
+}
+
+// ゲーム再開機能（タッチまたはクリック）
+function touchEnded() {
+    if (timelimit <= 0) {
+        restartGame();
+    }
+    return false;
+}
+
+function mousePressed() {
+    if (timelimit <= 0) {
+        restartGame();
+    }
+}
+
+// ゲーム再開関数
+function restartGame() {
+    score = 0;
+    timelimit = 30;
+    timerActive = false;
+    resetApple();
+    resetTimer();
+    loop(); // draw()ループを再開
 }
 
 //残り時間を表示する関数（オプション）
@@ -167,27 +252,30 @@ function displayTime() {
         }
         // スコアを表示
         fill(0); // 黒色で塗りつぶす
-        textSize(32); // テキストサイズを32に設定
+        textSize(32 * scaleFactor); // テキストサイズをスケールに合わせて設定
         textFont('Delius'); // Deliusフォントを適用
         textAlign(CENTER, CENTER); // テキストの配置を中央に設定
-        text('Game Over', width / 2, height / 2 - 30); // ゲームオーバーのメッセージを表示
+        text('Game Over', width / 2, height / 2 - 30 * scaleFactor); // ゲームオーバーのメッセージを表示
         text('Final Score: ' + score, width / 2, height / 2); // 最終スコアを表示
-        textSize(20);
-        text('High Score: ' + highScore, width / 2, height / 2 + 40); // ハイスコアを表示
+        textSize(20 * scaleFactor);
+        text('High Score: ' + highScore, width / 2, height / 2 + 40 * scaleFactor); // ハイスコアを表示
+        textSize(16 * scaleFactor);
+        text('タップまたはクリックで再開', width / 2, height / 2 + 80 * scaleFactor); // 再開メッセージを表示
         noLoop(); // draw()ループを停止
     } 
     fill(0); // 黒色で塗りつぶす
-    textSize(16); // テキストサイズを16に設定
+    textSize(16 * scaleFactor); // テキストサイズをスケールに合わせて設定
     textFont('Delius'); // Deliusフォントを適用
     textAlign(LEFT, TOP); // テキストの配置を左上に設定
-    text('Time: ' + Math.ceil(timelimit), 10, 40); // 残り時間を画面の左上に表示
+    text('Time: ' + Math.ceil(timelimit), 10 * scaleFactor, 40 * scaleFactor); // 残り時間を画面の左上に表示
 
 }
 
 // --- タイマーアイテムを表示する関数 ---
 function displayTimer() {
     if (timerActive) {
-        image(timerImg, timerX - 20, timerY - 20, 40, 40);
+        let timerSize = 40 * scaleFactor;
+        image(timerImg, timerX - timerSize/2, timerY - timerSize/2, timerSize, timerSize);
     }
 }
 
@@ -214,12 +302,14 @@ function updateTimer() {
 
 // --- タイマーアイテムの位置をリセットする関数 ---
 function resetTimer() {
-    timerX = random(30, width - 30);
-    timerY = 15;
-    timerSpeed = random(2, 4);
+    let margin = 30 * scaleFactor;
+    timerX = random(margin, width - margin);
+    timerY = 15 * scaleFactor;
+    timerSpeed = random(2, 4) * scaleFactor;
 }
 
 // --- タイマーがかごでキャッチされたか判定する関数 ---
 function isTimerCaught() {
-    return (timerX > basketX - basketWidth / 2 && timerX < basketX + basketWidth && timerY >= height - 70);
+    let basketBottom = height - 70 * scaleFactor;
+    return (timerX > basketX - basketWidth / 2 && timerX < basketX + basketWidth && timerY >= basketBottom);
 }
