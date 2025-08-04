@@ -8,6 +8,7 @@ let score = 0;   // ゲームのスコア
 let timelimit = 30; // ゲームの時間制限（秒）
 let appleImg;    // リンゴのスプライトシート画像
 let basketImg;   // かごのスプライトシート画像
+let brownImg;    // 背景用の茶色画像
 let frameIndex = 0; // 現在のフレームインデックス
 const frameWidth = 32; // リンゴスプライト1つの幅
 const frameHeight = 32; // リンゴスプライト1つの高さ
@@ -32,11 +33,13 @@ let clickSound; // ゲーム再開時のクリック音声ファイル用変数�
 let canvasWidth;
 let canvasHeight;
 let scaleFactor; // スケール係数
+let backgroundOffset = 0; // 背景のオフセット用変数を追加
 
 // 画像とフォントを事前にロードする関数
 function preload() {
     appleImg = loadImage('img/Apple.png'); // Apple.pngをロード
     basketImg = loadImage('img/basket.png'); // basket.pngをロード
+    brownImg = loadImage('img/Brown.png'); // Brown.pngをロード
     // 砂時計などの画像ファイルを用意してください
     timerImg = loadImage('img/timer.png');
     catchSound = loadSound('mp3/ringootsitatoki.mp3'); // 音声ファイルをロード
@@ -91,17 +94,19 @@ function calculateCanvasSize() {
 
 // ゲームのメインループ
 function draw() {
-    // 背景色を決定
+    // 背景にBrown.pngを敷き詰めて描画
+    drawTiledBackground();
+    
+    // 背景色を決定（フラッシュ効果）
     if (flashRed) {
-        background('rgba(231,76,60,0.3)'); // 赤・透明度0.3
+        fill(231, 76, 60, 77); // 赤・透明度0.3（255 * 0.3 ≈ 77）
+        rect(0, 0, width, height);
         flashTimer -= deltaTime;
         if (flashTimer <= 0) {
             flashRed = false;
         }
         // 赤フラッシュ時は何も描画せずreturn
         return;
-    } else {
-        background(220); // 通常
     }
 
     // リンゴを表示して更新
@@ -123,6 +128,31 @@ function draw() {
 
     displayTimer();
     updateTimer();
+}
+
+// 背景にBrown.pngを敷き詰めて描画する関数
+function drawTiledBackground() {
+    if (brownImg) {
+        // 画像のタイルサイズを計算（スケールファクターを適用）
+        let tileSize = 64 * scaleFactor; // 適切なタイルサイズに調整
+        
+        // 背景を下に動かすためのオフセットを更新
+        backgroundOffset += 1 * scaleFactor; // 速度を調整可能
+        
+        // オフセットがタイルサイズを超えたらリセット（無限ループ効果）
+        if (backgroundOffset >= tileSize) {
+            backgroundOffset = 0;
+        }
+        
+        // 画面全体に画像を敷き詰める（オフセットを適用）
+        for (let x = 0; x < width + tileSize; x += tileSize) {
+            for (let y = -tileSize; y < height + tileSize; y += tileSize) {
+                image(brownImg, x, y + backgroundOffset, tileSize, tileSize);
+            }
+        }
+    } else {
+        background(220); // 画像が読み込まれていない場合は通常の背景
+    }
 }
 
 // リンゴを画面に表示する関数
