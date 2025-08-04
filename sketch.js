@@ -28,6 +28,8 @@ let catchSound; // 音声ファイル用変数を追加
 let missSound; // リンゴを落とした時の音声ファイル用変数を追加
 let timerSound; // 時計キャッチ時の音声ファイル用変数を追加
 let clickSound; // ゲーム再開時のクリック音声ファイル用変数を追加
+let bgm; // BGM用変数を追加
+let bgmStarted = false; // BGM開始フラグを追加
 
 // スマホ対応のための変数
 let canvasWidth;
@@ -46,6 +48,7 @@ function preload() {
     missSound = loadSound('mp3/ringotyatti.mp3'); // リンゴを落とした時の音声ファイルをロード
     timerSound = loadSound('mp3/tokei.mp3'); // 時計キャッチ時の音声ファイルをロード
     clickSound = loadSound('mp3/click.mp3'); // ゲーム再開時のクリック音声ファイルをロード
+    bgm = loadSound('mp3/bgm.mp3'); // BGMファイルをロード
 }
 
 // ゲームの初期設定
@@ -58,6 +61,12 @@ function setup() {
     
     // スケール係数を計算（基準サイズ400pxに対する比率）
     scaleFactor = min(canvasWidth / 400, canvasHeight / 400);
+    
+    // BGMの設定
+    if (bgm) {
+        bgm.setLoop(true); // ループ再生を設定
+        bgm.setVolume(0.3); // 音量を30%に設定
+    }
     
     // リンゴの位置を初期化
     resetApple();
@@ -225,6 +234,12 @@ function displayBasket() {
 
 // かごをマウス・タッチに追従させる関数
 function moveBasket() {
+    // BGMを初回操作時に開始
+    if (!bgmStarted && bgm) {
+        bgm.play();
+        bgmStarted = true;
+    }
+    
     // マウスまたはタッチのX座標に基づいてかごの位置を更新
     let targetX = mouseX;
     
@@ -278,6 +293,11 @@ function restartGame() {
     resetApple();
     resetTimer();
     loop(); // draw()ループを再開
+    
+    // BGMが停止している場合は再開
+    if (bgm && !bgm.isPlaying()) {
+        bgm.play();
+    }
 }
 
 //残り時間を表示する関数（オプション）
