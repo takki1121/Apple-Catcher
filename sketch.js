@@ -23,6 +23,10 @@ let timerActive = false;
 let flashRed = false; // 背景フラグ
 let flashTimer = 0;   // フラッシュ用タイマー
 let highScore = 0; // ハイスコア用変数を追加
+let catchSound; // 音声ファイル用変数を追加
+let missSound; // リンゴを落とした時の音声ファイル用変数を追加
+let timerSound; // 時計キャッチ時の音声ファイル用変数を追加
+let clickSound; // ゲーム再開時のクリック音声ファイル用変数を追加
 
 // スマホ対応のための変数
 let canvasWidth;
@@ -31,10 +35,14 @@ let scaleFactor; // スケール係数
 
 // 画像とフォントを事前にロードする関数
 function preload() {
-    appleImg = loadImage('Apple.png'); // Apple.pngをロード
-    basketImg = loadImage('basket.png'); // basket.pngをロード
+    appleImg = loadImage('img/Apple.png'); // Apple.pngをロード
+    basketImg = loadImage('img/basket.png'); // basket.pngをロード
     // 砂時計などの画像ファイルを用意してください
-    timerImg = loadImage('timer.png');
+    timerImg = loadImage('img/timer.png');
+    catchSound = loadSound('mp3/ringootsitatoki.mp3'); // 音声ファイルをロード
+    missSound = loadSound('mp3/ringotyatti.mp3'); // リンゴを落とした時の音声ファイルをロード
+    timerSound = loadSound('mp3/tokei.mp3'); // 時計キャッチ時の音声ファイルをロード
+    clickSound = loadSound('mp3/click.mp3'); // ゲーム再開時のクリック音声ファイルをロード
 }
 
 // ゲームの初期設定
@@ -141,12 +149,14 @@ function updateApple() {
         timelimit -= 2;         // タイムを2秒減らす
         flashRed = true;        // フラグON
         flashTimer = 150;       // 150ミリ秒だけ赤くする
+        missSound.play();       // リンゴを落とした時の音声を再生
         resetApple();
     }
 
     // リンゴがかごに当たったかを判定
     if (isCaught()) {
         score++; // スコアを1増やす
+        catchSound.play(); // 音声を再生
         resetApple(); // リンゴの位置をリセット
     }
 }
@@ -231,6 +241,7 @@ function mousePressed() {
 
 // ゲーム再開関数
 function restartGame() {
+    clickSound.play(); // ゲーム再開時のクリック音声を再生
     score = 0;
     timelimit = 30;
     timerActive = false;
@@ -291,6 +302,7 @@ function updateTimer() {
         // かごでキャッチしたか判定
         if (isTimerCaught()) {
             timelimit += 5; // 残り時間を5秒増やす
+            timerSound.play(); // 時計キャッチ時の音声を再生
             timerActive = false;
         }
         // 画面下まで落ちたら消す
